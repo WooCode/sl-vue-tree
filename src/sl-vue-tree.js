@@ -246,6 +246,10 @@ export default {
 
     onExternalDragoverHandler(node, event) {
       event.preventDefault();
+      console.log(
+        "onExternalDragoverHandlerThrottled allow is: ",
+        this.allowExternalDrag
+      );
       if (!this.allowExternalDrag) {
         return;
       }
