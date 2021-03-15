@@ -246,15 +246,15 @@ export default {
 
     onExternalDragoverHandler(node, event) {
       event.preventDefault();
+      const root = this.getRoot();
       console.log(
         "onExternalDragoverHandlerThrottled allow is: ",
         this.allowExternalDrag,
         this
       );
-      if (!this.allowExternalDrag) {
+      if (!root.allowExternalDrag) {
         return;
       }
-      const root = this.getRoot();
       const cursorPosition = root.getCursorPositionFromCoords(
         event.clientX,
         event.clientY
