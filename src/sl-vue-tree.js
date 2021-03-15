@@ -1,5 +1,5 @@
 import throttle from "lodash/throttle";
- 
+
 export default {
   name: "sl-vue-tree",
   props: {
@@ -32,10 +32,10 @@ export default {
     },
     multiselectKey: {
       type: [String, Array],
-      default: function () {
+      default: function() {
         return ["ctrlKey", "metaKey"];
       },
-      validator: function (value) {
+      validator: function(value) {
         let allowedKeys = ["ctrlKey", "metaKey", "altKey"];
         let multiselectKeys = Array.isArray(value) ? value : [value];
         multiselectKeys = multiselectKeys.filter(
@@ -83,7 +83,7 @@ export default {
   },
 
   watch: {
-    value: function (newValue) {
+    value: function(newValue) {
       this.currentValue = newValue;
     },
   },
@@ -316,7 +316,7 @@ export default {
       this.throttleMousemove
     ),
 
-    onMousemoveHandler: (event) {
+    onMousemoveHandler(event) {
       if (!this.isRoot) {
         this.getRoot().onMousemoveHandler(event);
         return;
