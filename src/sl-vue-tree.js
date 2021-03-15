@@ -240,8 +240,8 @@ export default {
       this.getRoot().$emit("nodecontextmenu", node, event);
     },
 
-    onExternalDragoverHandlerDebounced: throttle(
-      onExternalDragoverHandler,
+    onExternalDragoverHandlerThrottled: throttle(
+      this.onExternalDragoverHandler,
       this.throttleMousemove
     ),
 
@@ -311,8 +311,8 @@ export default {
       return selectedNode;
     },
 
-    onMousemoveHandlerDebounced: throttle(
-      onMousemoveHandler,
+    onMousemoveHandlerThrottled: throttle(
+      this.onMousemoveHandler,
       this.throttleMousemove
     ),
 
