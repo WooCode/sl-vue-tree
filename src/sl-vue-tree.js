@@ -240,10 +240,9 @@ export default {
       this.getRoot().$emit("nodecontextmenu", node, event);
     },
 
-    onExternalDragoverHandlerThrottled: throttle(
-      this.onExternalDragoverHandler,
-      this.throttleMousemove
-    ),
+    onExternalDragoverHandlerThrottled: throttle(function(event) {
+      this.onExternalDragoverHandler(event);
+    }, this.throttleMousemove),
 
     onExternalDragoverHandler(node, event) {
       event.preventDefault();
@@ -311,10 +310,9 @@ export default {
       return selectedNode;
     },
 
-    onMousemoveHandlerThrottled: throttle(
-      this.onMousemoveHandler,
-      this.throttleMousemove
-    ),
+    onMousemoveHandlerThrottled: throttle(function(event) {
+      this.onMousemoveHandler(event);
+    }, this.throttleMousemove),
 
     onMousemoveHandler(event) {
       if (!this.isRoot) {
