@@ -236,8 +236,8 @@ export default {
       this.getRoot().$emit("nodecontextmenu", node, event);
     },
 
-    onExternalDragoverHandlerThrottled: throttle(function(event) {
-      this.onExternalDragoverHandler(event);
+    onExternalDragoverHandlerThrottled: throttle(function(node, event) {
+      this.onExternalDragoverHandler(node, event);
     }, 75),
 
     onExternalDragoverHandler(node, event) {
