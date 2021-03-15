@@ -2,7 +2,7 @@
   <div
       class="sl-vue-tree"
       :class="{'sl-vue-tree-root': isRoot }"
-      @mousemove="onMousemoveHandler"
+      @mousemove="onMousemoveHandlerDebounced"
       @mouseleave="onMouseleaveHandler"
       @dragend="onDragendHandler(null, $event)"
   >
@@ -33,7 +33,7 @@
             @contextmenu="emitNodeContextmenu(node, $event)"
             @dblclick="emitNodeDblclick(node, $event)"
             @click="emitNodeClick(node, $event)"
-            @dragover="onExternalDragoverHandler(node, $event)"
+            @dragover="onExternalDragoverHandlerDebounced(node, $event)"
             @drop="onExternalDropHandler(node, $event)"
             :path="node.pathStr"
             :class="{
@@ -146,6 +146,5 @@
   </div>
 </template>
 
-<script src="./sl-vue-tree.js"></script>
-
-
+<script src="./sl-vue-tree.js">
+</script>

@@ -1,54 +1,61 @@
-
+import throttle from "lodash/throttle";
+ 
 export default {
-  name: 'sl-vue-tree',
+  name: "sl-vue-tree",
   props: {
     value: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
     edgeSize: {
       type: Number,
-      default: 3
+      default: 3,
     },
     showBranches: {
       type: Boolean,
-      default: false
+      default: false,
     },
     level: {
       type: Number,
-      default: 0
+      default: 0,
     },
     parentInd: {
-      type: Number
+      type: Number,
     },
     allowMultiselect: {
       type: Boolean,
-      default: true
+      default: true,
     },
     allowToggleBranch: {
       type: Boolean,
-      default: true
+      default: true,
     },
     multiselectKey: {
       type: [String, Array],
       default: function () {
-        return ['ctrlKey', 'metaKey']
+        return ["ctrlKey", "metaKey"];
       },
       validator: function (value) {
-        let allowedKeys = ['ctrlKey', 'metaKey', 'altKey'];
+        let allowedKeys = ["ctrlKey", "metaKey", "altKey"];
         let multiselectKeys = Array.isArray(value) ? value : [value];
-        multiselectKeys = multiselectKeys.filter(keyName => allowedKeys.indexOf(keyName ) !== -1);
+        multiselectKeys = multiselectKeys.filter(
+          (keyName) => allowedKeys.indexOf(keyName) !== -1
+        );
         return !!multiselectKeys.length;
-      }
+      },
     },
     scrollAreaHeight: {
       type: Number,
-      default: 70
+      default: 70,
     },
     maxScrollSpeed: {
       type: Number,
-      default: 20
-    }
+      default: 20,
+    },
+    throttleMousemove: {
+      type: Number,
+      default: 0,
+    },
   },
 
   data() {
@@ -59,26 +66,26 @@ export default {
       lastSelectedNode: null,
       mouseIsDown: false,
       isDragging: false,
-      lastMousePos: {x: 0, y: 0},
+      lastMousePos: { x: 0, y: 0 },
       preventDrag: false,
-      currentValue: this.value
+      currentValue: this.value,
     };
   },
 
   mounted() {
     if (this.isRoot) {
-      document.addEventListener('mouseup', this.onDocumentMouseupHandler);
+      document.addEventListener("mouseup", this.onDocumentMouseupHandler);
     }
   },
 
   beforeDestroy() {
-    document.removeEventListener('mouseup', this.onDocumentMouseupHandler);
+    document.removeEventListener("mouseup", this.onDocumentMouseupHandler);
   },
 
   watch: {
     value: function (newValue) {
       this.currentValue = newValue;
-    }
+    },
   },
 
   computed: {
@@ -88,7 +95,7 @@ export default {
     },
 
     depth() {
-      return this.gaps.length
+      return this.gaps.length;
     },
 
     nodes() {
@@ -100,9 +107,9 @@ export default {
       return this.getParent().nodes[this.parentInd].children;
     },
     /**
-   * gaps is using for nodes indentation
-   * @returns {number[]}
-   */
+     * gaps is using for nodes indentation
+     * @returns {number[]}
+     */
     gaps() {
       const gaps = [];
       let i = this.level - 1;
@@ -112,7 +119,7 @@ export default {
     },
 
     isRoot() {
-      return !this.level
+      return !this.level;
     },
 
     selectionSize() {
@@ -121,10 +128,9 @@ export default {
 
     dragSize() {
       return this.getDraggable().length;
-    }
+    },
   },
   methods: {
-
     setCursorPosition(pos) {
       if (this.isRoot) {
         this.rootCursorPosition = pos;
@@ -134,19 +140,13 @@ export default {
     },
 
     getNodes(nodeModels, parentPath = [], isVisible = true) {
-
       return nodeModels.map((nodeModel, ind) => {
         const nodePath = parentPath.concat(ind);
         return this.getNode(nodePath, nodeModel, nodeModels, isVisible);
-      })
+      });
     },
 
-    getNode(
-      path,
-      nodeModel = null,
-      siblings = null,
-      isVisible = null
-    ) {
+    getNode(path, nodeModel = null, siblings = null, isVisible = null) {
       const ind = path.slice(-1)[0];
 
       // calculate nodeModel, siblings, isVisible fields if it is not passed as arguments
@@ -159,16 +159,20 @@ export default {
 
       if (!nodeModel) return null;
 
-      const isExpanded = nodeModel.isExpanded == void 0 ? true : !!nodeModel.isExpanded;
-      const isDraggable = nodeModel.isDraggable == void 0 ? true : !!nodeModel.isDraggable;
-      const isSelectable = nodeModel.isSelectable == void 0 ? true : !!nodeModel.isSelectable;
+      const isExpanded =
+        nodeModel.isExpanded == void 0 ? true : !!nodeModel.isExpanded;
+      const isDraggable =
+        nodeModel.isDraggable == void 0 ? true : !!nodeModel.isDraggable;
+      const isSelectable =
+        nodeModel.isSelectable == void 0 ? true : !!nodeModel.isSelectable;
 
       const node = {
-
         // define the all ISlTreeNodeModel props
         title: nodeModel.title,
         isLeaf: !!nodeModel.isLeaf,
-        children: nodeModel.children ? this.getNodes(nodeModel.children, path, isExpanded) : [],
+        children: nodeModel.children
+          ? this.getNodes(nodeModel.children, path, isExpanded)
+          : [],
         isSelected: !!nodeModel.isSelected,
         isExpanded,
         isVisible,
@@ -182,7 +186,7 @@ export default {
         level: path.length,
         ind,
         isFirstChild: ind == 0,
-        isLastChild: ind === siblings.length - 1
+        isLastChild: ind === siblings.length - 1,
       };
       return node;
     },
@@ -194,7 +198,8 @@ export default {
       for (let i = 0; i < path.length - 1; i++) {
         let ind = path[i];
         let nodeModel = nodeModels[ind];
-        let isExpanded = nodeModel.isExpanded == void 0 ? true : !!nodeModel.isExpanded;
+        let isExpanded =
+          nodeModel.isExpanded == void 0 ? true : !!nodeModel.isExpanded;
         if (!isExpanded) return false;
         nodeModels = nodeModel.children;
       }
@@ -204,71 +209,89 @@ export default {
 
     emitInput(newValue) {
       this.currentValue = newValue;
-      this.getRoot().$emit('input', newValue);
+      this.getRoot().$emit("input", newValue);
     },
 
     emitSelect(selectedNodes, event) {
-      this.getRoot().$emit('select', selectedNodes, event);
+      this.getRoot().$emit("select", selectedNodes, event);
     },
 
     emitBeforeDrop(draggingNodes, position, cancel) {
-      this.getRoot().$emit('beforedrop', draggingNodes, position, cancel);
+      this.getRoot().$emit("beforedrop", draggingNodes, position, cancel);
     },
 
     emitDrop(draggingNodes, position, event) {
-      this.getRoot().$emit('drop', draggingNodes, position, event);
+      this.getRoot().$emit("drop", draggingNodes, position, event);
     },
 
     emitToggle(toggledNode, event) {
-      this.getRoot().$emit('toggle', toggledNode, event);
+      this.getRoot().$emit("toggle", toggledNode, event);
     },
 
     emitNodeClick(node, event) {
-      this.getRoot().$emit('nodeclick', node, event);
+      this.getRoot().$emit("nodeclick", node, event);
     },
 
     emitNodeDblclick(node, event) {
-      this.getRoot().$emit('nodedblclick', node, event);
+      this.getRoot().$emit("nodedblclick", node, event);
     },
 
     emitNodeContextmenu(node, event) {
-      this.getRoot().$emit('nodecontextmenu', node, event);
+      this.getRoot().$emit("nodecontextmenu", node, event);
     },
+
+    onExternalDragoverHandlerDebounced: throttle(
+      onExternalDragoverHandler,
+      this.throttleMousemove
+    ),
 
     onExternalDragoverHandler(node, event) {
       event.preventDefault();
       const root = this.getRoot();
-      const cursorPosition = root.getCursorPositionFromCoords(event.clientX, event.clientY);
+      const cursorPosition = root.getCursorPositionFromCoords(
+        event.clientX,
+        event.clientY
+      );
       root.setCursorPosition(cursorPosition);
-      root.$emit('externaldragover', cursorPosition, event);
+      root.$emit("externaldragover", cursorPosition, event);
     },
 
     onExternalDropHandler(node, event) {
       const root = this.getRoot();
-      const cursorPosition = root.getCursorPositionFromCoords(event.clientX, event.clientY);
-      root.$emit('externaldrop', cursorPosition, event);
+      const cursorPosition = root.getCursorPositionFromCoords(
+        event.clientX,
+        event.clientY
+      );
+      root.$emit("externaldrop", cursorPosition, event);
       this.setCursorPosition(null);
     },
 
     select(path, addToSelection = false, event = null) {
-      const multiselectKeys = Array.isArray(this.multiselectKey) ?
-        this.multiselectKey:
-        [this.multiselectKey];
-      const multiselectKeyIsPressed = event && !!multiselectKeys.find(key => event[key]);
-      addToSelection = (multiselectKeyIsPressed || addToSelection) && this.allowMultiselect ;
+      const multiselectKeys = Array.isArray(this.multiselectKey)
+        ? this.multiselectKey
+        : [this.multiselectKey];
+      const multiselectKeyIsPressed =
+        event && !!multiselectKeys.find((key) => event[key]);
+      addToSelection =
+        (multiselectKeyIsPressed || addToSelection) && this.allowMultiselect;
 
       const selectedNode = this.getNode(path);
       if (!selectedNode) return null;
       const newNodes = this.copy(this.currentValue);
-      const shiftSelectionMode = this.allowMultiselect && event && event.shiftKey && this.lastSelectedNode;
+      const shiftSelectionMode =
+        this.allowMultiselect &&
+        event &&
+        event.shiftKey &&
+        this.lastSelectedNode;
       const selectedNodes = [];
       let shiftSelectionStarted = false;
 
       this.traverse((node, nodeModel) => {
-
-
         if (shiftSelectionMode) {
-          if (node.pathStr === selectedNode.pathStr || node.pathStr === this.lastSelectedNode.pathStr) {
+          if (
+            node.pathStr === selectedNode.pathStr ||
+            node.pathStr === this.lastSelectedNode.pathStr
+          ) {
             nodeModel.isSelected = node.isSelectable;
             shiftSelectionStarted = !shiftSelectionStarted;
           }
@@ -280,9 +303,7 @@ export default {
         }
 
         if (nodeModel.isSelected) selectedNodes.push(node);
-
       }, newNodes);
-
 
       this.lastSelectedNode = selectedNode;
       this.emitInput(newNodes);
@@ -290,7 +311,12 @@ export default {
       return selectedNode;
     },
 
-    onMousemoveHandler(event) {
+    onMousemoveHandlerDebounced: throttle(
+      onMousemoveHandler,
+      this.throttleMousemove
+    ),
+
+    onMousemoveHandler: (event) {
       if (!this.isRoot) {
         this.getRoot().onMousemoveHandler(event);
         return;
@@ -300,16 +326,17 @@ export default {
 
       const initialDraggingState = this.isDragging;
       const isDragging =
-        this.isDragging || (
-        this.mouseIsDown &&
-        (this.lastMousePos.x !== event.clientX || this.lastMousePos.y !== event.clientY)
-      );
+        this.isDragging ||
+        (this.mouseIsDown &&
+          (this.lastMousePos.x !== event.clientX ||
+            this.lastMousePos.y !== event.clientY));
 
-      const isDragStarted = initialDraggingState === false && isDragging === true;
+      const isDragStarted =
+        initialDraggingState === false && isDragging === true;
 
       this.lastMousePos = {
         x: event.clientX,
-        y: event.clientY
+        y: event.clientY,
       };
 
       if (!isDragging) return;
@@ -317,13 +344,20 @@ export default {
       const $root = this.getRoot().$el;
       const rootRect = $root.getBoundingClientRect();
       const $dragInfo = this.$refs.dragInfo;
-      const dragInfoTop = (event.clientY - rootRect.top + $root.scrollTop - ($dragInfo.style.marginBottom | 0) );
-      const dragInfoLeft = (event.clientX - rootRect.left);
+      const dragInfoTop =
+        event.clientY -
+        rootRect.top +
+        $root.scrollTop -
+        ($dragInfo.style.marginBottom | 0);
+      const dragInfoLeft = event.clientX - rootRect.left;
 
-      $dragInfo.style.top = dragInfoTop + 'px';
-      $dragInfo.style.left = dragInfoLeft + 'px';
+      $dragInfo.style.top = dragInfoTop + "px";
+      $dragInfo.style.left = dragInfoLeft + "px";
 
-      const cursorPosition = this.getCursorPositionFromCoords(event.clientX, event.clientY);
+      const cursorPosition = this.getCursorPositionFromCoords(
+        event.clientX,
+        event.clientY
+      );
       const destNode = cursorPosition.node;
       const placement = cursorPosition.placement;
 
@@ -342,14 +376,17 @@ export default {
       this.setCursorPosition({ node: destNode, placement });
 
       const scrollBottomLine = rootRect.bottom - this.scrollAreaHeight;
-      const scrollDownSpeed = (event.clientY - scrollBottomLine) / (rootRect.bottom - scrollBottomLine);
+      const scrollDownSpeed =
+        (event.clientY - scrollBottomLine) /
+        (rootRect.bottom - scrollBottomLine);
       const scrollTopLine = rootRect.top + this.scrollAreaHeight;
-      const scrollTopSpeed = (scrollTopLine - event.clientY) / (scrollTopLine - rootRect.top);
+      const scrollTopSpeed =
+        (scrollTopLine - event.clientY) / (scrollTopLine - rootRect.top);
 
       if (scrollDownSpeed > 0) {
         this.startScroll(scrollDownSpeed);
       } else if (scrollTopSpeed > 0) {
-        this.startScroll(-scrollTopSpeed)
+        this.startScroll(-scrollTopSpeed);
       } else {
         this.stopScroll();
       }
@@ -357,40 +394,40 @@ export default {
 
     getCursorPositionFromCoords(x, y) {
       const $target = document.elementFromPoint(x, y);
-      const $nodeItem = $target.getAttribute('path') ? $target : this.getClosetElementWithPath($target);
+      const $nodeItem = $target.getAttribute("path")
+        ? $target
+        : this.getClosetElementWithPath($target);
       let destNode;
       let placement;
 
       if ($nodeItem) {
-
         if (!$nodeItem) return;
 
-        destNode = this.getNode(JSON.parse($nodeItem.getAttribute('path')));
+        destNode = this.getNode(JSON.parse($nodeItem.getAttribute("path")));
 
         const nodeHeight = $nodeItem.offsetHeight;
         const edgeSize = this.edgeSize;
         const offsetY = y - $nodeItem.getBoundingClientRect().top;
 
-
         if (destNode.isLeaf) {
-          placement = offsetY >= nodeHeight / 2 ? 'after' : 'before';
+          placement = offsetY >= nodeHeight / 2 ? "after" : "before";
         } else {
           if (offsetY <= edgeSize) {
-            placement = 'before';
+            placement = "before";
           } else if (offsetY >= nodeHeight - edgeSize) {
-            placement = 'after';
+            placement = "after";
           } else {
-            placement = 'inside';
+            placement = "inside";
           }
         }
       } else {
         const $root = this.getRoot().$el;
         const rootRect = $root.getBoundingClientRect();
-        if (y > rootRect.top + (rootRect.height / 2)) {
-          placement = 'after';
+        if (y > rootRect.top + rootRect.height / 2) {
+          placement = "after";
           destNode = this.getLastNode();
         } else {
-          placement = 'before';
+          placement = "before";
           destNode = this.getFirstNode();
         }
       }
@@ -400,7 +437,7 @@ export default {
 
     getClosetElementWithPath($el) {
       if (!$el) return null;
-      if ($el.getAttribute('path')) return $el;
+      if ($el.getAttribute("path")) return $el;
       return this.getClosetElementWithPath($el.parentElement);
     },
 
@@ -409,9 +446,15 @@ export default {
       const $root = this.getRoot().$el;
       const rootRect = $root.getBoundingClientRect();
       if (event.clientY >= rootRect.bottom) {
-        this.setCursorPosition({ node: this.nodes.slice(-1)[0], placement: 'after' });
+        this.setCursorPosition({
+          node: this.nodes.slice(-1)[0],
+          placement: "after",
+        });
       } else if (event.clientY < rootRect.top) {
-        this.setCursorPosition({ node: this.getFirstNode(), placement: 'before'});
+        this.setCursorPosition({
+          node: this.getFirstNode(),
+          placement: "before",
+        });
       }
     },
 
@@ -420,7 +463,7 @@ export default {
     },
 
     getLastNode() {
-      let lastNode  = null;
+      let lastNode = null;
       this.traverse((node) => {
         lastNode = node;
       });
@@ -432,7 +475,6 @@ export default {
     },
 
     getNextNode(path, filter = null) {
-
       let resultNode = null;
 
       this.traverse((node) => {
@@ -442,7 +484,6 @@ export default {
           resultNode = node;
           return false; // stop traverse
         }
-
       });
 
       return resultNode;
@@ -501,7 +542,6 @@ export default {
       this.mouseIsDown = true;
     },
 
-
     startScroll(speed) {
       const $root = this.getRoot().$el;
       if (this.scrollSpeed === speed) {
@@ -527,7 +567,6 @@ export default {
     },
 
     onNodeMouseupHandler(event, targetNode = null) {
-
       // handle only left mouse button
       if (event.button !== 0) return;
 
@@ -547,8 +586,7 @@ export default {
       if (!this.cursorPosition) {
         this.stopDrag();
         return;
-      };
-
+      }
 
       const draggingNodes = this.getDraggable();
 
@@ -570,31 +608,37 @@ export default {
 
       // find dragging model to delete
       for (let draggingNode of draggingNodes) {
-        const sourceSiblings = this.getNodeSiblings(newNodes, draggingNode.path);
+        const sourceSiblings = this.getNodeSiblings(
+          newNodes,
+          draggingNode.path
+        );
         const draggingNodeModel = sourceSiblings[draggingNode.ind];
         nodeModelsSubjectToInsert.push(draggingNodeModel);
       }
 
       // allow the drop to be cancelled
       let cancelled = false;
-      this.emitBeforeDrop(draggingNodes, this.cursorPosition, () => cancelled = true);
+      this.emitBeforeDrop(
+        draggingNodes,
+        this.cursorPosition,
+        () => (cancelled = true)
+      );
 
       if (cancelled) {
-          this.stopDrag();
-          return;
+        this.stopDrag();
+        return;
       }
 
       const nodeModelsToInsert = [];
 
       // mark dragging model to delete
       for (let draggingNodeModel of nodeModelsSubjectToInsert) {
-          nodeModelsToInsert.push(this.copy(draggingNodeModel));
-          draggingNodeModel['_markToDelete'] = true;
+        nodeModelsToInsert.push(this.copy(draggingNodeModel));
+        draggingNodeModel["_markToDelete"] = true;
       }
 
       // insert dragging nodes to the new place
       this.insertModels(this.cursorPosition, nodeModelsToInsert, newNodes);
-
 
       // delete dragging node from the old place
       this.traverseModels((nodeModel, siblings, ind) => {
@@ -602,13 +646,11 @@ export default {
         siblings.splice(ind, 1);
       }, newNodes);
 
-
       this.lastSelectedNode = null;
       this.emitInput(newNodes);
       this.emitDrop(draggingNodes, this.cursorPosition, event);
       this.stopDrag();
     },
-
 
     onToggleHandler(event, node) {
       if (!this.allowToggleBranch) return;
@@ -625,7 +667,6 @@ export default {
       this.stopScroll();
     },
 
-
     getParent() {
       return this.$parent;
     },
@@ -639,7 +680,6 @@ export default {
       if (path.length === 1) return nodes;
       return this.getNodeSiblings(nodes[path[0]].children, path.slice(1));
     },
-
 
     updateNode(path, patch) {
       if (!this.isRoot) {
@@ -673,12 +713,7 @@ export default {
       return selectedNodes;
     },
 
-
-    traverse(
-      cb,
-      nodeModels = null,
-      parentPath = []
-    ) {
+    traverse(cb, nodeModels = null, parentPath = []) {
       if (!nodeModels) nodeModels = this.currentValue;
 
       let shouldStop = false;
@@ -695,7 +730,8 @@ export default {
         if (shouldStop) break;
 
         if (nodeModel.children) {
-          shouldStop = this.traverse(cb, nodeModel.children, itemPath) === false;
+          shouldStop =
+            this.traverse(cb, nodeModel.children, itemPath) === false;
           if (shouldStop) break;
         }
       }
@@ -714,9 +750,9 @@ export default {
     },
 
     remove(paths) {
-      const pathsStr = paths.map(path => JSON.stringify(path));
+      const pathsStr = paths.map((path) => JSON.stringify(path));
       const newNodes = this.copy(this.currentValue);
-      this.traverse( (node, nodeModel, siblings) => {
+      this.traverse((node, nodeModel, siblings) => {
         for (const pathStr of pathsStr) {
           if (node.pathStr === pathStr) nodeModel._markToDelete = true;
         }
@@ -735,13 +771,14 @@ export default {
       const destSiblings = this.getNodeSiblings(newNodes, destNode.path);
       const destNodeModel = destSiblings[destNode.ind];
 
-      if (cursorPosition.placement === 'inside') {
+      if (cursorPosition.placement === "inside") {
         destNodeModel.children = destNodeModel.children || [];
         destNodeModel.children.unshift(...nodeModels);
       } else {
-        const insertInd = cursorPosition.placement === 'before' ?
-          destNode.ind :
-          destNode.ind + 1;
+        const insertInd =
+          cursorPosition.placement === "before"
+            ? destNode.ind
+            : destNode.ind + 1;
 
         destSiblings.splice(insertInd, 0, ...nodeModels);
       }
@@ -758,12 +795,14 @@ export default {
 
     checkNodeIsParent(sourceNode, destNode) {
       const destPath = destNode.path;
-      return JSON.stringify(destPath.slice(0, sourceNode.path.length)) == sourceNode.pathStr;
+      return (
+        JSON.stringify(destPath.slice(0, sourceNode.path.length)) ==
+        sourceNode.pathStr
+      );
     },
 
     copy(entity) {
       return JSON.parse(JSON.stringify(entity));
-    }
-
-  }
+    },
+  },
 };
