@@ -30,6 +30,10 @@ export default {
       type: Boolean,
       default: true,
     },
+    allowExternalDrag: {
+      type: Boolean,
+      default: true,
+    },
     multiselectKey: {
       type: [String, Array],
       default: function() {
@@ -242,6 +246,9 @@ export default {
 
     onExternalDragoverHandler(node, event) {
       event.preventDefault();
+      if (!this.allowExternalDrag) {
+        return;
+      }
       const root = this.getRoot();
       const cursorPosition = root.getCursorPositionFromCoords(
         event.clientX,
