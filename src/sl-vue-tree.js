@@ -52,10 +52,6 @@ export default {
       type: Number,
       default: 20,
     },
-    throttleMousemove: {
-      type: Number,
-      default: 0,
-    },
   },
 
   data() {
@@ -240,11 +236,9 @@ export default {
       this.getRoot().$emit("nodecontextmenu", node, event);
     },
 
-    onExternalDragoverHandlerThrottled: function() {
-      return throttle(function(event) {
-        this.onExternalDragoverHandler(event);
-      }, this.throttleMousemove);
-    },
+    onExternalDragoverHandlerThrottled: throttle(function(event) {
+      this.onExternalDragoverHandler(event);
+    }, 75),
 
     onExternalDragoverHandler(node, event) {
       event.preventDefault();
@@ -312,11 +306,9 @@ export default {
       return selectedNode;
     },
 
-    onMousemoveHandlerThrottled: function() {
-      return throttle(function(event) {
-        this.onMousemoveHandler(event);
-      }, this.throttleMousemove);
-    },
+    onMousemoveHandlerThrottled: throttle(function(event) {
+      this.onMousemoveHandler(event);
+    }, 75),
 
     onMousemoveHandler(event) {
       if (!this.isRoot) {
