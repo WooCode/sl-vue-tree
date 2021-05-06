@@ -12,7 +12,6 @@
       class="sl-vue-tree-cursor"
       :style="`user-select: none; pointer-events: none;position: absolute; left: 0; top: ${cursorTopPosition}px;height: ${cursorHeight}px;`"
     >
-      CTOP: {{cursorTopPosition}}
       <!-- suggested place for node insertion  -->
     </div>
       <div
