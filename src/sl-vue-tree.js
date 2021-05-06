@@ -64,6 +64,9 @@ export default {
       scrollIntervalId: 0,
       scrollSpeed: 0,
       lastSelectedNode: null,
+      lastHoveredNode: null,
+      rootCursorTop: -9999,
+      rootCursorHeight: 1,
       mouseIsDown: false,
       isDragging: false,
       lastMousePos: { x: 0, y: 0 },
@@ -96,6 +99,16 @@ export default {
 
     depth() {
       return this.gaps.length;
+    },
+
+    cursorTopPosition() {
+      if (this.isRoot) return this.rootCursorTop;
+      return this.getParent().cursorTopPosition;
+    },
+
+    cursorHeight() {
+      if (this.isRoot) return this.rootCursorHeight;
+      return this.getParent().cursorHeight;
     },
 
     nodes() {
@@ -137,6 +150,22 @@ export default {
         return;
       }
       this.getParent().setCursorPosition(pos);
+    },
+
+    setCursorTopPosition(value) {
+      if (this.isRoot) {
+        this.rootCursorTop = value;
+        return;
+      }
+      this.getParent().setCursorTopPosition(value);
+    },
+
+    setCursorHeight(value) {
+      if (this.isRoot) {
+        this.rootCursorHeight = value;
+        return;
+      }
+      this.getParent().setCursorHeight(value);
     },
 
     getNodes(nodeModels, parentPath = [], isVisible = true) {
@@ -254,6 +283,8 @@ export default {
         event.clientX,
         event.clientY
       );
+      //TODO: Update this with the cursorTop and cursorHeight logic if we want
+      //      to support external drag in the future.
       root.setCursorPosition(cursorPosition);
       root.$emit("externaldragover", cursorPosition, event);
     },
@@ -269,53 +300,29 @@ export default {
     },
 
     select(path, addToSelection = false, event = null) {
-      const multiselectKeys = Array.isArray(this.multiselectKey)
-        ? this.multiselectKey
-        : [this.multiselectKey];
-      const multiselectKeyIsPressed =
-        event && !!multiselectKeys.find((key) => event[key]);
-      addToSelection =
-        (multiselectKeyIsPressed || addToSelection) && this.allowMultiselect;
-
       const selectedNode = this.getNode(path);
       if (!selectedNode) return null;
-      const newNodes = this.copy(this.currentValue);
-      const shiftSelectionMode =
-        this.allowMultiselect &&
-        event &&
-        event.shiftKey &&
-        this.lastSelectedNode;
+
+      if (this.lastSelectedNode) {
+        this.lastSelectedNode.isSelected = false;
+      }
       const selectedNodes = [];
-      let shiftSelectionStarted = false;
-
       this.traverse((node, nodeModel) => {
-        if (shiftSelectionMode) {
-          if (
-            node.pathStr === selectedNode.pathStr ||
-            node.pathStr === this.lastSelectedNode.pathStr
-          ) {
-            nodeModel.isSelected = node.isSelectable;
-            shiftSelectionStarted = !shiftSelectionStarted;
-          }
-          if (shiftSelectionStarted) nodeModel.isSelected = node.isSelectable;
-        } else if (node.pathStr === selectedNode.pathStr) {
+        if (node.pathStr === selectedNode.pathStr) {
           nodeModel.isSelected = node.isSelectable;
-        } else if (!addToSelection) {
-          if (nodeModel.isSelected) nodeModel.isSelected = false;
+        } else if (
+          this.lastSelectedNode &&
+          node.pathStr === this.lastSelectedNode.pathStr
+        ) {
+          nodeModel.isSelected = false;
         }
-
         if (nodeModel.isSelected) selectedNodes.push(node);
-      }, newNodes);
-
+      }, this.currentValue);
       this.lastSelectedNode = selectedNode;
-      this.emitInput(newNodes);
       this.emitSelect(selectedNodes, event);
+
       return selectedNode;
     },
-
-    onMousemoveHandlerThrottled: throttle(function(event) {
-      this.onMousemoveHandler(event);
-    }, 75),
 
     onMousemoveHandler(event) {
       if (!this.isRoot) {
@@ -361,6 +368,26 @@ export default {
       );
       const destNode = cursorPosition.node;
       const placement = cursorPosition.placement;
+      if (cursorPosition) {
+        const $root = this.getRoot().$el;
+        const rootRect = $root.getBoundingClientRect();
+        switch (placement) {
+          case "before":
+            this.setCursorTopPosition(cursorPosition.rect.top - rootRect.top);
+            this.setCursorHeight(1);
+            break;
+          case "inside":
+            this.setCursorTopPosition(cursorPosition.rect.top - rootRect.top);
+            this.setCursorHeight(cursorPosition.rect.height);
+            break;
+          case "after":
+            this.setCursorTopPosition(
+              cursorPosition.rect.bottom - rootRect.top
+            );
+            this.setCursorHeight(1);
+            break;
+        }
+      }
 
       if (isDragStarted && !destNode.isSelected) {
         this.select(destNode.path, false, event);
@@ -373,7 +400,7 @@ export default {
       }
 
       this.isDragging = isDragging;
-
+      this.lastHoveredNode = destNode;
       this.setCursorPosition({ node: destNode, placement });
 
       const scrollBottomLine = rootRect.bottom - this.scrollAreaHeight;
@@ -400,6 +427,7 @@ export default {
         : this.getClosetElementWithPath($target);
       let destNode;
       let placement;
+      let rect = null;
 
       if ($nodeItem) {
         if (!$nodeItem) return;
@@ -408,7 +436,8 @@ export default {
 
         const nodeHeight = $nodeItem.offsetHeight;
         const edgeSize = this.edgeSize;
-        const offsetY = y - $nodeItem.getBoundingClientRect().top;
+        rect = $nodeItem.getBoundingClientRect();
+        const offsetY = y - rect.top;
 
         if (destNode.isLeaf) {
           placement = offsetY >= nodeHeight / 2 ? "after" : "before";
@@ -423,7 +452,8 @@ export default {
         }
       } else {
         const $root = this.getRoot().$el;
-        const rootRect = $root.getBoundingClientRect();
+        rect = $root.getBoundingClientRect();
+        const rootRect = rect;
         if (y > rootRect.top + rootRect.height / 2) {
           placement = "after";
           destNode = this.getLastNode();
@@ -433,7 +463,7 @@ export default {
         }
       }
 
-      return { node: destNode, placement };
+      return { node: destNode, placement, rect };
     },
 
     getClosetElementWithPath($el) {
@@ -665,6 +695,8 @@ export default {
       this.isDragging = false;
       this.mouseIsDown = false;
       this.setCursorPosition(null);
+      this.setCursorTopPosition(-9999);
+      this.setCursorHeight(1);
       this.stopScroll();
     },
 

@@ -22,6 +22,7 @@ export interface ISlTreeNode<TDataType> extends ISlTreeNodeModel<TDataType> {
 export interface ICursorPosition<TDataType> {
   node: ISlTreeNode<TDataType>;
   placement: "before" | "inside" | "after";
+  rect: DOMRect;
 }
 export interface IVueData<TDataType> {
   rootCursorPosition: ICursorPosition<TDataType>;
@@ -38,7 +39,11 @@ export default class SlVueTree<TDataType> extends Vue {
   allowExternalDrag: boolean;
   private rootCursorPosition;
   private rootDraggingNode;
+  private rootCursorTop;
+  private rootCursorHeight;
   cursorPosition: ICursorPosition<TDataType>;
+  cursorTopPosition: number;
+  cursorHeight: number;
   draggingNode: ISlTreeNode<TDataType>;
   readonly nodes: ISlTreeNode<TDataType>[];
   getNode(path: number[]): ISlTreeNode<TDataType>;
