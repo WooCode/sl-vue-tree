@@ -22,7 +22,7 @@ export interface ISlTreeNode<TDataType> extends ISlTreeNodeModel<TDataType> {
 export interface ICursorPosition<TDataType> {
   node: ISlTreeNode<TDataType>;
   placement: "before" | "inside" | "after";
-  rect: DOMRect;
+  rect?: DOMRect;
 }
 export interface IVueData<TDataType> {
   rootCursorPosition: ICursorPosition<TDataType>;
