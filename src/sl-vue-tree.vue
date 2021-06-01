@@ -125,7 +125,7 @@
         ref="dragInfo"
         class="sl-vue-tree-drag-info"
       >
-        <slot name="draginfo"> Anka Items: {{ selectionSize }} </slot>
+        <slot name="draginfo">Items: {{ selectionSize }} </slot>
       </div>
     </div>
   </div>
